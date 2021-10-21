@@ -1,0 +1,14 @@
+.testBox {
+    width: 500px;
+    background-color: antiquewhite;
+    display: flex;
+    white-space: pre-wrap;
+    flex-direction: column;
+    font-family: monospace;
+    font-size: large;
+}
+
+.testBox button {
+    width: 20px;
+    height: 20px;
+}
