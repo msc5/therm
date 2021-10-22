@@ -1,3 +1,2 @@
 import './ast'
-
-// import './lexer'
+import './logic'

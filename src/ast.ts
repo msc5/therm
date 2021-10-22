@@ -14,8 +14,8 @@ import './style.css'
 // var testString = '1 * 2 + 3'
 // var testString = '1 ^ 2 ^ 3 + (4 - 5 - 6)'
 // var testString = 'a + b = c + d'
-// var testString = 'T2 / T1 = (P2 / P1) ^ ((gamma - 1) / gamma)'
-var testString = 'T2 / 300 = (30 / 10) ^ ((1.4 - 1) / 1.4)'
+var testString = 'T2 / T1 = (P2 / P1) ^ ((gamma - 1) / gamma)'
+// var testString = 'T2 / 300 = (30 / 10) ^ ((1.4 - 1) / 1.4)'
 // var testString = 'a + b = c + d'
 // var testString = 'a / (b + c * d) = e / f'
 // var testString = 'a / b = c'
@@ -76,8 +76,7 @@ class DFA {
 
         this.graph.addNode('Variable', { name: 'Variable' })
         this.graph.addDirectedEdge('Start', 'Variable', { regex: REGEX.variable })
-        this.graph.addDirectedEdge('Variable', 'Variable', { regex: /[0-9]/ })
-        this.graph.addDirectedEdge('Variable', 'Variable', { regex: REGEX.variable })
+        this.graph.addDirectedEdge('Variable', 'Variable', { regex: /[0-9]|[A-Za-z]|\_/ })
 
         this.graph.addNode('Operator', { name: 'Operator' })
         this.graph.addDirectedEdge('Start', 'Operator', { regex: REGEX.operator })
@@ -180,20 +179,21 @@ class StringStream extends Stream<string> {
 
     constructor(text: string) { super([...text]) }
 
-    // Checks if character at i + 1 matches query.
-    // If there is a match, advances stream
-    public match(regex: RegExp): boolean {
-        var match = regex.test(this.peek())
-        if (match) { this.i++ }
-        return match
-    }
+    // // Checks if character at i + 1 matches query.
+    // // If there is a match, advances stream
+    // public match(regex: RegExp): boolean {
+    //     var match = regex.test(this.peek())
+    //     if (match) { this.i++ }
+    //     return match
+    // }
 
 }
 
-class TokenStream {
-    a: Token[]
-    constructor(tokens: Token[]) { this.a = tokens }
-    toString(): (string | number)[] { return this.a.map(o => o.value) }
+class TokenStream extends Stream<Token> {
+    // a: Token[]
+    // constructor(tokens: Token[]) { this.a = tokens }
+    constructor(tokens: Token[]) { super(tokens) }
+    // toString(): (string | number)[] { return this.a.map(o => o.value) }
     consume(): Token { return this.a.shift() }
     peek(): Token { return this.a[0] }
     isEmpty(): boolean { return this.a.length == 0 }
@@ -260,6 +260,7 @@ class Node<T> {
     left: Node<T>
     right: Node<T>
     prev: Node<T>
+
     constructor(value: T, left?: Node<T>, right?: Node<T>) {
         this.value = value
         if (left) {
@@ -271,6 +272,17 @@ class Node<T> {
             right.prev = this
         }
     }
+
+    copy() {
+        if (this.left != null) {
+            var left = this.left.copy();
+        }
+        if (this.right != null) {
+            var right = this.right.copy();
+        }
+        return new Node(this.value, left, right);
+    }
+
 }
 
 type Parselet = (tokens: TokenStream, node: Node<Token>) => Node<Token>
@@ -367,50 +379,22 @@ class Parser {
 
 }
 
-type ASTCallback = (node: Node<Token>, depth?: number) => void
+// type ASTCallback = (node: Node<Token>, depth?: number) => void
 
 class AST {
 
     root: Node<Token>
 
-    // TODO: Create defensive copy of tree from given root node
-    // constructor(input: string) {
-    //     var stream = new StringStream(input)
-    //     var dfa = new DFA()
-
-    //     var lexer = new Lexer(dfa)
-    //     var tokenStream = lexer.lex(stream)
-
-    //     var parser = new Parser()
-    //     var root = parser.parse(tokenStream)
-    //     this.root = root
-    // }
-    constructor(root: Node<Token>) {
-        var newToken = new Token(
-            root.value.name,
-            root.value.value,
-            root.value.start,
-            root.value.end
-        )
-        var parent = new Node(newToken)
-        this.DFT((node) => {
-            newToken = new Token(
-                node.value.name,
-                node.value.value,
-                node.value.start,
-                node.value.end
-            )
-            var newNode = new Node(
-                newToken,
-            )
-            newNode.prev = parent
-        }, root, 'pre')
-    }
+    constructor(root: Node<Token>) { this.root = root.copy() }
 
     // TODO: return defensive copy of AST
     public solve(key: string) {
 
         console.log('SOLVING FOR ', key)
+
+        // Create a defensive copy of self:
+        var ast = new AST(this.root)
+
         var i = 0
         var current: Node<Token>
         var visited: Node<Token>[]
@@ -421,24 +405,24 @@ class AST {
         var balanceRoot = (node: Node<Token>, newNode: Node<Token>, lastDir: boolean, rootDir: boolean) => {
             // If target node is on right side of root
             if (rootDir) {
-                this.root.left = newNode
+                ast.root.left = newNode
                 if (lastDir) {
-                    this.root.right = node.left
-                    node.left.prev = this.root
+                    ast.root.right = node.left
+                    node.left.prev = ast.root
                 } else {
-                    this.root.right = node.right
-                    node.right.prev = this.root
+                    ast.root.right = node.right
+                    node.right.prev = ast.root
                 }
             }
             // If target node is on left side of root
             else {
-                this.root.right = newNode
+                ast.root.right = newNode
                 if (lastDir) {
-                    this.root.left = node.left
-                    node.left.prev = this.root
+                    ast.root.left = node.left
+                    node.left.prev = ast.root
                 } else {
-                    this.root.left = node.right
-                    node.right.prev = this.root
+                    ast.root.left = node.right
+                    node.right.prev = ast.root
                 }
             }
         }
@@ -447,25 +431,29 @@ class AST {
             var div = new Token('Operator', op)
             var newNode = new Node(
                 div,
-                rootDir ? this.root.left : this.root.right,
+                rootDir ? ast.root.left : ast.root.right,
                 lastDir ? node.left : node.right
             )
-            newNode.prev = this.root
+            newNode.prev = ast.root
             return newNode
         }
 
         var solveOps = {
-            '/': (node: Node<Token>, lastDir: boolean, rootDir: boolean) => {
-                var newNode = opNode('*', node, false, rootDir)
-                balanceRoot(node, newNode, true, rootDir)
-            },
             '*': (node: Node<Token>, lastDir: boolean, rootDir: boolean) => {
                 var newNode = opNode('/', node, lastDir, rootDir)
                 balanceRoot(node, newNode, !lastDir, rootDir)
             },
+            '/': (node: Node<Token>, lastDir: boolean, rootDir: boolean) => {
+                var newNode = opNode('*', node, false, rootDir)
+                balanceRoot(node, newNode, true, rootDir)
+            },
             '+': (node: Node<Token>, lastDir: boolean, rootDir: boolean) => {
                 var newNode = opNode('-', node, lastDir, rootDir)
                 balanceRoot(node, newNode, !lastDir, rootDir)
+            },
+            '-': (node: Node<Token>, lastDir: boolean, rootDir: boolean) => {
+                var newNode = opNode('+', node, false, rootDir)
+                balanceRoot(node, newNode, true, rootDir)
             },
             '^': (node: Node<Token>, lastDir: boolean, rootDir: boolean) => {
                 // TODO: 
@@ -483,24 +471,24 @@ class AST {
         while (i++ < 20 && nVisited >= 1) {
 
             console.log(i)
-            console.log(asciitree.generate(this.toString()))
+            console.log(asciitree.generate(ast.toString()))
 
             visited = []
             directions = []
 
             // DFS for target node by key
-            this.DFT(node => { if (node.value.value == key) current = node })
+            ast.DFT(node => { if (node.value.value == key) current = node })
 
-            if (current.prev == this.root) break
+            if (current.prev == ast.root) break
 
             // Search upstream for penultimate parent node, keeping track of visited nodes
-            while (current.prev != this.root) {
+            while (current.prev != ast.root) {
                 var old = current
                 current = current.prev
                 directions.push(current.right == old ? true : false)
                 visited.push(current)
             }
-            rootDir = this.root.right == current ? true : false
+            rootDir = ast.root.right == current ? true : false
 
             nVisited = visited.length
 
@@ -510,13 +498,16 @@ class AST {
             var solveOp = solveOps[lastOp.value.value]
             solveOp(lastOp, lastDir, rootDir)
 
+            console.log('lastDir: ', lastDir)
         }
 
-        return this
+        if (ast.root.left == current) return new AST(ast.root.right)
+        else return new AST(ast.root.left)
 
     }
 
-    public interpret(key: string) {
+    public interpret(key?: string) {
+        if (!key) return this.reInterpret()
         var current: Node<Token>
         this.DFT(node => { if (node.value.value == key) current = node })
         return this.reInterpret(current)
@@ -552,7 +543,11 @@ class AST {
     }
 
     // Depth First Traversal
-    public DFT(callback: ASTCallback, root?: Node<Token>, order?: string): void {
+    public DFT(
+        callback: (node: Node<Token>, depth?: number) => void,
+        root?: Node<Token>,
+        order?: string):
+        void {
         if (!order) order = 'post'
         if (!root) root = this.root
         function reDFT(current: Node<Token>, depth: number): void {
@@ -568,7 +563,11 @@ class AST {
     }
 
     // Breadth First (Level order) Traversal
-    public BFT(callback: ASTCallback, root?: Node<Token>, order?: string): void {
+    public BFT(
+        callback: (node: Node<Token>, depth?: number) => void,
+        root?: Node<Token>,
+        order?: string):
+        void {
         if (!order) order = 'post'
         if (!root) root = this.root
         function reBFT(current: Node<Token>[], depth: number): void {
@@ -589,19 +588,16 @@ class AST {
 
 }
 
-var toAST = (input: string, key?: string) => {
-    var testAST = new AST(input)
-    var ascii_str = testAST.toString()
-    // var result = testAST.interpret()
-    // return asciitree.generate(ascii_str) + '\nResult: ' + String(result)
-    return asciitree.generate(ascii_str)
-}
-
-var toSolved = (input: string, key: string) => {
-    var testAST = new AST(input)
-    var solved = testAST.solve(key)
-    var result = solved.interpret('*')
-    return asciitree.generate(solved.toString()) + '\nResult: ' + String(result)
+// Takes a string as input and returns an AST
+var toAST = (input: string) => {
+    var stream = new StringStream(input)
+    var dfa = new DFA()
+    var lexer = new Lexer(dfa)
+    var tokenStream = lexer.lex(stream)
+    var parser = new Parser()
+    var root = parser.parse(tokenStream)
+    var ast = new AST(root)
+    return ast
 }
 
 window.onload = () => {
@@ -617,25 +613,39 @@ window.onload = () => {
     var testButton = $(document.createElement('button'))
 
     var solveInput = $(document.createElement('input'))
-    solveInput.val('c')
+    // solveInput.val('c')
 
     var solveButton = $(document.createElement('button'))
     var solveOutput = $(document.createElement('span'))
 
+    var asciiAST = (ast: AST) => {
+        return asciitree.generate(ast.toString())
+    }
+
+    var evalAST = (ast: AST, key: string) => {
+        var solved = ast.solve(key)
+        // var result = solved.interpret()
+        return (asciiAST(solved) + '\n' + '')
+    }
+
     testButton.click(() => {
-        testOutput.html(toAST(testInput.val()))
+        var ast = toAST(testInput.val())
+        testOutput.html(asciiAST(ast))
     })
 
     testInput.on('change', () => {
-        testOutput.html(toAST(testInput.val()))
+        var ast = toAST(testInput.val())
+        testOutput.html(asciiAST(ast))
     })
 
     solveButton.click(() => {
-        solveOutput.html(toSolved(testInput.val(), solveInput.val()))
+        var ast = toAST(testInput.val())
+        solveOutput.html(evalAST(ast, solveInput.val()))
     })
 
     solveInput.on('change', () => {
-        solveOutput.html(toSolved(testInput.val(), solveInput.val()))
+        var ast = toAST(testInput.val())
+        solveOutput.html(evalAST(ast, solveInput.val()))
     })
 
 

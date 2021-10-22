@@ -42,11 +42,12 @@ export interface StateValues<Type> {
 }
 
 export interface PathValues<Type> {
-    type?: any
+    type: PathType
     W?: Type
     Q?: Type
     vratio?: Type
     pratio?: Type
+    eff?: Type
 }
 
 export interface Options {
@@ -97,8 +98,7 @@ export var stateTags = [
     's',
     'X',
     'V',
-    'm',
-    'y'
+    'm'
 ]
 
 export var stateNames = [
@@ -127,14 +127,16 @@ export var pathTags = [
     'W',
     'Q',
     'pratio',
-    'vratio'
+    'vratio',
+    'eff'
 ]
 
 export var pathNames = [
     'Work',
     'Heat',
     'Pressure Ratio',
-    'Volume Ratio'
+    'Volume Ratio',
+    'Isentropic Efficiency'
 ]
 
 export var pathUnits = [
