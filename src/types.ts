@@ -42,12 +42,13 @@ export interface StateValues<Type> {
 }
 
 export interface PathValues<Type> {
+    fluid: FluidType
     type: PathType
     W?: Type
     Q?: Type
     vratio?: Type
     pratio?: Type
-    eff?: Type
+    eta?: Type
 }
 
 export interface Options {
@@ -59,7 +60,7 @@ export interface Options {
     cycleType: CycleType
 }
 
-export type FluidType = 'gas' | 'vapor'
+export type FluidType = 'gas' | 'vapor' | 'none'
 
 export type PathType =
     | 'end'
@@ -67,6 +68,8 @@ export type PathType =
     | 'adiabatic'
     | 'isentropic'
     | 'isentropic pump'
+    | 'isentropic compressor'
+    | 'isentropic turbine'
     | 'constant heat'
     | 'constant pressure'
     | 'constant temperature'
@@ -124,11 +127,12 @@ export var stateUnits = [
 ]
 
 export var pathTags = [
+    'type',
     'W',
     'Q',
     'pratio',
     'vratio',
-    'eff'
+    'eta'
 ]
 
 export var pathNames = [

@@ -123,7 +123,9 @@ class DFA {
 
 class Token {
 
-    name: MathTokenName
+    type: MathTokenName
+
+    name: string
     value: MathTokenValue
 
     bindingPower: number
@@ -131,12 +133,19 @@ class Token {
     start: number
     end: number
 
-    constructor(name: MathTokenName, value: MathTokenValue, start?: number, end?: number) {
-        this.name = name
-        this.value = value
+    constructor(type: MathTokenName, value: MathTokenValue, name?: string, start?: number, end?: number) {
+        this.type = type
+        if (this.type == 'Number') this.value = Number(value)
+        else this.value = value
+        if (!name) { this.name = String(this.value) }
+        else this.name = name
         this.start = start
         this.end = end
         this.bindingPower = BindingPower(value)
+    }
+
+    copy() {
+        return new Token(this.type, this.value, this.name, this.start, this.end)
     }
 
 }
@@ -193,7 +202,7 @@ class TokenStream extends Stream<Token> {
     // a: Token[]
     // constructor(tokens: Token[]) { this.a = tokens }
     constructor(tokens: Token[]) { super(tokens) }
-    // toString(): (string | number)[] { return this.a.map(o => o.value) }
+    toString(): (string | number)[] { return this.a.map(o => o.value) }
     consume(): Token { return this.a.shift() }
     peek(): Token { return this.a[0] }
     isEmpty(): boolean { return this.a.length == 0 }
@@ -215,15 +224,14 @@ class Lexer {
         // If no match --> break
 
         var tokens: Token[] = []
-        var c = 0
 
-        while (stream.hasNext() && ++c < 100) {
+        while (stream.hasNext()) {
 
             this.DFA.reset()
             var start = stream.pos()
             var string: string[] = []
 
-            while (this.DFA.outDegree(this.DFA.state()) != 0 && ++c < 100) {
+            while (this.DFA.outDegree(this.DFA.state()) != 0) {
 
                 if (!stream.hasNext()) { break }
                 var first = this.DFA.state()
@@ -242,7 +250,7 @@ class Lexer {
 
             var name = this.DFA.getName(this.DFA.state())
             if (name != undefined) {
-                tokens.push(new Token(name, string.join(''), start + 1, start + string.length))
+                tokens.push(new Token(name, string.join(''), undefined, start + 1, start + string.length))
             }
 
         }
@@ -255,7 +263,7 @@ class Lexer {
 
 }
 
-class Node<T> {
+class Node<T extends Token> {
     value: T
     left: Node<T>
     right: Node<T>
@@ -273,14 +281,15 @@ class Node<T> {
         }
     }
 
-    copy() {
+    copy(prev?: Node<T>) {
+        if (prev) this.prev = prev
         if (this.left != null) {
-            var left = this.left.copy();
+            var left = this.left.copy(this);
         }
         if (this.right != null) {
-            var right = this.right.copy();
+            var right = this.right.copy(this);
         }
-        return new Node(this.value, left, right);
+        return new Node(this.value.copy(), left, right);
     }
 
 }
@@ -302,11 +311,11 @@ class Parser {
             'Parenthesis': (tokens: TokenStream, token: Node<Token>) => {
                 var leftNode = this.reParse(tokens, 0)
                 var next = tokens.consume()
-                if (next.name != 'Parenthesis') { throw 'Expected closing parenthesis' }
+                if (next.type != 'Parenthesis') { throw 'Expected closing parenthesis' }
                 return leftNode
             },
         }
-        return parselets[operator.name]
+        return parselets[operator.type]
 
     }
 
@@ -321,7 +330,7 @@ class Parser {
             'Operator': (tokens: TokenStream, leftNode: Node<Token>) => {
                 var bp = BindingPower(operator.value)
                 // Right Associativity of exponents: 
-                if (operator.value == '^') { bp -= 1 }
+                if (operator.value == '^') { bp -= 0.1 }
                 var rightNode = this.reParse(tokens, bp)
                 return new Node(operator, leftNode, rightNode)
             },
@@ -330,7 +339,7 @@ class Parser {
                 return new Node(operator, leftNode, rightNode)
             }
         }
-        return parselets[operator.name]
+        return parselets[operator.type]
 
     }
 
@@ -384,13 +393,21 @@ class Parser {
 class AST {
 
     root: Node<Token>
+    values: {} = {}
 
-    constructor(root: Node<Token>) { this.root = root.copy() }
+    constructor(root: Node<Token>) {
+        this.root = root.copy()
+        this.BFT((n, d) => {
+            if ((n.value.type == 'Number' || n.value.type == 'Variable') && typeof n.value.value != 'number') {
+                this.values[n.value.name] = n.value
+            }
+        })
+    }
 
     // TODO: return defensive copy of AST
     public solve(key: string) {
 
-        console.log('SOLVING FOR ', key)
+        // console.log('SOLVING FOR ', key)
 
         // Create a defensive copy of self:
         var ast = new AST(this.root)
@@ -470,8 +487,8 @@ class AST {
 
         while (i++ < 20 && nVisited >= 1) {
 
-            console.log(i)
-            console.log(asciitree.generate(ast.toString()))
+            // console.log(i)
+            // console.log(asciitree.generate(ast.toString()))
 
             visited = []
             directions = []
@@ -498,7 +515,6 @@ class AST {
             var solveOp = solveOps[lastOp.value.value]
             solveOp(lastOp, lastDir, rootDir)
 
-            console.log('lastDir: ', lastDir)
         }
 
         if (ast.root.left == current) return new AST(ast.root.right)
@@ -506,14 +522,28 @@ class AST {
 
     }
 
-    public interpret(key?: string) {
-        if (!key) return this.reInterpret()
+    public interpret(key?: string, known?: {}) {
+        var ast = new AST(this.root)
+        if (known) {
+            for (var [k, v] of Object.entries(ast.values)) {
+                if (known[k]) {
+                    // ast.values[k].value = known[k]
+                    ast.setValue(k, known[k])
+                }
+                else {
+                    // console.log('UNKNOWN: ', k)
+                    return
+                }
+            }
+            // console.log(ast.toTree())
+        }
+        if (!key) return this.reInterpret(ast.root)
         var current: Node<Token>
         this.DFT(node => { if (node.value.value == key) current = node })
         return this.reInterpret(current)
     }
 
-    private reInterpret(node?: Node<Token>): number {
+    private reInterpret(node: Node<Token>): number {
         var doOp = {
             '+': (left: number, right: number) => left + right,
             '-': (left: number, right: number) => left - right,
@@ -528,18 +558,37 @@ class AST {
             var right = Number(this.reInterpret(node.right))
             return doOp[operator](left, right)
         }
-        if (!node) return this.reInterpret(this.root)
-        if (node.value.name == 'Operator') return op(node)
-        if (node.value.name == 'Number') return num(node)
-        if (node.value.name == 'Variable') throw 'Cannot interpret variable node!'
+        if (node.value.type == 'Operator') return op(node)
+        if (
+            node.value.type == 'Number' ||
+            typeof (node.value.value) == 'number'
+        ) return num(node)
+        if (node.value.type == 'Variable') throw 'Cannot interpret variable node!'
+    }
+
+    public setValue(key: string, value: number) {
+        this.DFT((n, d) => { if (key == n.value.name) n.value.value = value })
+    }
+
+    public getValue(key: string): number {
+        this.DFT((n, d) => { if (key == n.value.name) return n.value.value })
+        return undefined
     }
 
     public toString(): string {
         var str: string[] = []
         this.DFT((node, depth) => {
-            str.push('#'.repeat(depth) + node.value.value + '\n')
+            str.push('#'.repeat(depth) + node.value.name + ': ' + node.value.value + '\n')
         })
         return str.reverse().join('')
+    }
+
+    public toTree(): string {
+        var str: string[] = []
+        this.DFT((node, depth) => {
+            str.push('#'.repeat(depth) + node.value.name + ': ' + node.value.value + '\n')
+        })
+        return asciitree.generate(str.reverse().join(''))
     }
 
     // Depth First Traversal
@@ -600,67 +649,67 @@ var toAST = (input: string) => {
     return ast
 }
 
-window.onload = () => {
-
-    var testBox = $(document.createElement('div'))
-    testBox.addClass('testBox')
-
-    var testInput = $(document.createElement('input'))
-    testInput.val(testString)
-
-    var testOutput = $(document.createElement('span'))
-
-    var testButton = $(document.createElement('button'))
-
-    var solveInput = $(document.createElement('input'))
-    // solveInput.val('c')
-
-    var solveButton = $(document.createElement('button'))
-    var solveOutput = $(document.createElement('span'))
-
-    var asciiAST = (ast: AST) => {
-        return asciitree.generate(ast.toString())
-    }
-
-    var evalAST = (ast: AST, key: string) => {
-        var solved = ast.solve(key)
-        // var result = solved.interpret()
-        return (asciiAST(solved) + '\n' + '')
-    }
-
-    testButton.click(() => {
-        var ast = toAST(testInput.val())
-        testOutput.html(asciiAST(ast))
-    })
-
-    testInput.on('change', () => {
-        var ast = toAST(testInput.val())
-        testOutput.html(asciiAST(ast))
-    })
-
-    solveButton.click(() => {
-        var ast = toAST(testInput.val())
-        solveOutput.html(evalAST(ast, solveInput.val()))
-    })
-
-    solveInput.on('change', () => {
-        var ast = toAST(testInput.val())
-        solveOutput.html(evalAST(ast, solveInput.val()))
-    })
-
-
-    testBox.append(testInput)
-    testBox.append(testButton)
-    testBox.append(testOutput)
-
-    testBox.append(solveInput)
-    testBox.append(solveButton)
-    testBox.append(solveOutput)
-
-    testOutput.html(toAST(testInput.val()))
-
-    document.body.appendChild(testBox[0])
-
+var asciiAST = (ast: AST) => {
+    return asciitree.generate(ast.toString())
 }
 
-export { StringStream }
+// window.onload = () => {
+
+//     var testBox = $(document.createElement('div'))
+//     testBox.addClass('testBox')
+
+//     var testInput = $(document.createElement('input'))
+//     testInput.val(testString)
+
+//     var testOutput = $(document.createElement('span'))
+
+//     var testButton = $(document.createElement('button'))
+
+//     var solveInput = $(document.createElement('input'))
+//     // solveInput.val('c')
+
+//     var solveButton = $(document.createElement('button'))
+//     var solveOutput = $(document.createElement('span'))
+
+//     var evalAST = (ast: AST, key: string) => {
+//         var solved = ast.solve(key)
+//         // var result = solved.interpret()
+//         return (asciiAST(solved) + '\n' + '')
+//     }
+
+//     testButton.click(() => {
+//         var ast = toAST(testInput.val())
+//         testOutput.html(asciiAST(ast))
+//     })
+
+//     testInput.on('change', () => {
+//         var ast = toAST(testInput.val())
+//         testOutput.html(asciiAST(ast))
+//     })
+
+//     solveButton.click(() => {
+//         var ast = toAST(testInput.val())
+//         solveOutput.html(evalAST(ast, solveInput.val()))
+//     })
+
+//     solveInput.on('change', () => {
+//         var ast = toAST(testInput.val())
+//         solveOutput.html(evalAST(ast, solveInput.val()))
+//     })
+
+
+//     testBox.append(testInput)
+//     testBox.append(testButton)
+//     testBox.append(testOutput)
+
+//     testBox.append(solveInput)
+//     testBox.append(solveButton)
+//     testBox.append(solveOutput)
+
+//     testOutput.html(toAST(testInput.val()))
+
+//     document.body.appendChild(testBox[0])
+
+// }
+
+export { AST, toAST, asciiAST, Token }
