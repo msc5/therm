@@ -1,5 +1,5 @@
 import { PathValues, stateTags, pathTags, StateValues } from "./types"
-import { asciiAST, AST, toAST, Token } from './ast'
+import { AST, toAST, Token } from './ast'
 
 import Graph from "graphology"
 import _ from 'lodash'
@@ -203,53 +203,53 @@ class Diagram {
         // console.log(printNodes(this.valueGraph))
         // console.log(printEdges(this.valueGraph))
 
-        console.log('---')
-        console.log('COMPUTING P_s1')
-        console.log('ANSWER: ', this.compute('P_s1'))
+        // console.log('---')
+        // console.log('COMPUTING P_s1')
+        // console.log('ANSWER: ', this.compute('P_s1'))
 
-        console.log('---')
-        console.log('COMPUTING T_s1')
-        console.log('ANSWER: ', this.compute('T_s1'))
+        // console.log('---')
+        // console.log('COMPUTING T_s1')
+        // console.log('ANSWER: ', this.compute('T_s1'))
 
-        console.log('---')
-        console.log('COMPUTING v_s1')
-        console.log('ANSWER: ', this.compute('v_s1'))
+        // console.log('---')
+        // console.log('COMPUTING v_s1')
+        // console.log('ANSWER: ', this.compute('v_s1'))
 
-        console.log('---')
-        console.log('COMPUTING P_s2')
-        console.log('ANSWER: ', this.compute('P_s2'))
+        // console.log('---')
+        // console.log('COMPUTING P_s2')
+        // console.log('ANSWER: ', this.compute('P_s2'))
 
-        console.log('---')
-        console.log('COMPUTING T_s2')
-        console.log('ANSWER: ', this.compute('T_s2'))
+        // console.log('---')
+        // console.log('COMPUTING T_s2')
+        // console.log('ANSWER: ', this.compute('T_s2'))
 
-        console.log('---')
-        console.log('COMPUTING v_s2')
-        console.log('ANSWER: ', this.compute('v_s2'))
+        // console.log('---')
+        // console.log('COMPUTING v_s2')
+        // console.log('ANSWER: ', this.compute('v_s2'))
 
-        console.log('---')
-        console.log('COMPUTING P_s3')
-        console.log('ANSWER: ', this.compute('P_s3'))
+        // console.log('---')
+        // console.log('COMPUTING P_s3')
+        // console.log('ANSWER: ', this.compute('P_s3'))
 
-        console.log('---')
-        console.log('COMPUTING T_s3')
-        console.log('ANSWER: ', this.compute('T_s3'))
+        // console.log('---')
+        // console.log('COMPUTING T_s3')
+        // console.log('ANSWER: ', this.compute('T_s3'))
 
-        console.log('---')
-        console.log('COMPUTING v_s3')
-        console.log('ANSWER: ', this.compute('v_s3'))
+        // console.log('---')
+        // console.log('COMPUTING v_s3')
+        // console.log('ANSWER: ', this.compute('v_s3'))
 
-        console.log('---')
-        console.log('COMPUTING P_s4')
-        console.log('ANSWER: ', this.compute('P_s4'))
+        // console.log('---')
+        // console.log('COMPUTING P_s4')
+        // console.log('ANSWER: ', this.compute('P_s4'))
 
-        console.log('---')
-        console.log('COMPUTING T_s4')
-        console.log('ANSWER: ', this.compute('T_s4'))
+        // console.log('---')
+        // console.log('COMPUTING T_s4')
+        // console.log('ANSWER: ', this.compute('T_s4'))
 
-        console.log('---')
-        console.log('COMPUTING v_s4')
-        console.log('ANSWER: ', this.compute('v_s4'))
+        // console.log('---')
+        // console.log('COMPUTING v_s4')
+        // console.log('ANSWER: ', this.compute('v_s4'))
 
     }
 
@@ -289,7 +289,6 @@ class Diagram {
         this.valueGraph.forEachNeighbor(key, (n, a) => {
             // If neighbor is not known
             if (typeof known[n] != 'number' && n != last && !visited[n]) {
-                // console.log(n)
                 known[n] = this.computeNode(n, visited, known, key)
             }
         })
@@ -298,6 +297,7 @@ class Diagram {
         // console.log(key, last, known)
         // console.log(eqn.toTree())
         // console.log(eqn.toTree())
+        // console.log(eqn.solve(last).toTree())
         var solved = eqn.solve(last)
         var soln = solved.interpret(undefined, known)
         // console.log(soln)

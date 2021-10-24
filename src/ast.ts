@@ -21,11 +21,7 @@ var testString = 'T2 / T1 = (P2 / P1) ^ ((gamma - 1) / gamma)'
 // var testString = 'a / b = c'
 // var testString = 'a ^ b = c'
 
-type MathTokenValue =
-    | string
-    | number
-
-type MathTokenName =
+type MathTokenType =
     | 'Equals'
     | 'Operator'
     | 'Number'
@@ -41,7 +37,7 @@ type Operator =
     | '^'
     | '='
 
-function BindingPower(key: MathTokenValue) {
+function BindingPower(key: Operator) {
     switch (key) {
         case '+': case '-': return 10
         case '*': case '/': return 20
@@ -58,7 +54,7 @@ const REGEX = {
 }
 
 interface EdgeAttributes { regex: RegExp }
-interface NodeAttributes { name: MathTokenName }
+interface NodeAttributes { name: MathTokenType }
 
 class DFA {
 
@@ -123,29 +119,41 @@ class DFA {
 
 class Token {
 
-    type: MathTokenName
+    type: MathTokenType
 
     name: string
-    value: MathTokenValue
 
-    bindingPower: number
+    value: number
+    op: Operator
 
     start: number
     end: number
 
-    constructor(type: MathTokenName, value: MathTokenValue, name?: string, start?: number, end?: number) {
+    constructor(
+        type: MathTokenType,
+        name: string,
+        value?: number,
+        op?: Operator,
+        start?: number,
+        end?: number
+    ) {
         this.type = type
-        if (this.type == 'Number') this.value = Number(value)
-        else this.value = value
-        if (!name) { this.name = String(this.value) }
-        else this.name = name
-        this.start = start
-        this.end = end
-        this.bindingPower = BindingPower(value)
+        this.name = name
+        if (value) this.value = value
+        if (op) this.op = op
+        if (start) this.start = start
+        if (end) this.end = end
     }
 
-    copy() {
-        return new Token(this.type, this.value, this.name, this.start, this.end)
+    copy(): Token {
+        return new Token(
+            this.type,
+            this.name,
+            this.value,
+            this.op,
+            this.start,
+            this.end
+        )
     }
 
 }
@@ -202,7 +210,7 @@ class TokenStream extends Stream<Token> {
     // a: Token[]
     // constructor(tokens: Token[]) { this.a = tokens }
     constructor(tokens: Token[]) { super(tokens) }
-    toString(): (string | number)[] { return this.a.map(o => o.value) }
+    // toString(): string { return this.a.map(o => o.toString()).join('') }
     consume(): Token { return this.a.shift() }
     peek(): Token { return this.a[0] }
     isEmpty(): boolean { return this.a.length == 0 }
@@ -229,7 +237,7 @@ class Lexer {
 
             this.DFA.reset()
             var start = stream.pos()
-            var string: string[] = []
+            var str: string[] = []
 
             while (this.DFA.outDegree(this.DFA.state()) != 0) {
 
@@ -242,21 +250,30 @@ class Lexer {
                 // console.log(char, found, first + ' --> ' + this.DFA.state())
                 if (found) {
                     if (this.DFA.state() == 'Start') { stream.next(); break }
-                    if (this.DFA.state() != 'Start') { string.push(stream.next()) }
+                    if (this.DFA.state() != 'Start') { str.push(stream.next()) }
                 }
                 else { break }
 
             }
 
-            var name = this.DFA.getName(this.DFA.state())
-            if (name != undefined) {
-                tokens.push(new Token(name, string.join(''), undefined, start + 1, start + string.length))
+            var type = this.DFA.getName(this.DFA.state())
+            var name = str.join('')
+            if (type != undefined) {
+                tokens.push(
+                    new Token(
+                        type,
+                        name,
+                        (isNaN(Number(name)) ? undefined : Number(name)),
+                        (type == 'Operator' || type == 'Equals') ? (name as Operator) : undefined,
+                        start + 1,
+                        start + str.length
+                    )
+                )
             }
 
         }
 
         var tokenStream = new TokenStream(tokens)
-        // console.log(tokenStream.toString())
         return tokenStream
 
     }
@@ -328,9 +345,9 @@ class Parser {
             // as the root, leftNode (passed in to this function) as its
             // left node, and the result of the recusive parsing as the right node.
             'Operator': (tokens: TokenStream, leftNode: Node<Token>) => {
-                var bp = BindingPower(operator.value)
+                var bp = BindingPower(operator.op)
                 // Right Associativity of exponents: 
-                if (operator.value == '^') { bp -= 0.1 }
+                if (operator.op == '^') { bp -= 0.1 }
                 var rightNode = this.reParse(tokens, bp)
                 return new Node(operator, leftNode, rightNode)
             },
@@ -372,7 +389,7 @@ class Parser {
                 break
             }
 
-            if (BindingPower(nextToken.value) <= bp) {
+            if (BindingPower(nextToken.op) <= bp) {
                 // console.log('BP!')
                 break
             }
@@ -444,8 +461,8 @@ class AST {
             }
         }
 
-        var opNode = (op: MathTokenValue, node: Node<Token>, lastDir: boolean, rootDir: boolean) => {
-            var div = new Token('Operator', op)
+        var opNode = (op: Operator, node: Node<Token>, lastDir: boolean, rootDir: boolean) => {
+            var div = new Token('Operator', op, undefined, op)
             var newNode = new Node(
                 div,
                 rootDir ? ast.root.left : ast.root.right,
@@ -488,13 +505,12 @@ class AST {
         while (i++ < 20 && nVisited >= 1) {
 
             // console.log(i)
-            // console.log(asciitree.generate(ast.toString()))
 
             visited = []
             directions = []
 
             // DFS for target node by key
-            ast.DFT(node => { if (node.value.value == key) current = node })
+            ast.DFT(node => { if (node.value.name == key) current = node })
 
             if (current.prev == ast.root) break
 
@@ -512,7 +528,8 @@ class AST {
             // Do operation of last node visited
             var lastDir = directions[directions.length - 1]
             var lastOp = visited[visited.length - 1]
-            var solveOp = solveOps[lastOp.value.value]
+            // console.log('OP', lastOp.value)
+            var solveOp = solveOps[lastOp.value.op]
             solveOp(lastOp, lastDir, rootDir)
 
         }
@@ -539,7 +556,7 @@ class AST {
         }
         if (!key) return this.reInterpret(ast.root)
         var current: Node<Token>
-        this.DFT(node => { if (node.value.value == key) current = node })
+        ast.DFT(node => { if (node.value.name == key) current = node })
         return this.reInterpret(current)
     }
 
@@ -553,7 +570,7 @@ class AST {
         }
         var num = (node: Node<Token>) => node.value.value as number
         var op = (node: Node<Token>) => {
-            var operator = node.value.value
+            var operator = node.value.op
             var left = Number(this.reInterpret(node.left))
             var right = Number(this.reInterpret(node.right))
             return doOp[operator](left, right)
@@ -570,23 +587,18 @@ class AST {
         this.DFT((n, d) => { if (key == n.value.name) n.value.value = value })
     }
 
-    public getValue(key: string): number {
-        this.DFT((n, d) => { if (key == n.value.name) return n.value.value })
-        return undefined
-    }
-
-    public toString(): string {
-        var str: string[] = []
-        this.DFT((node, depth) => {
-            str.push('#'.repeat(depth) + node.value.name + ': ' + node.value.value + '\n')
-        })
-        return str.reverse().join('')
-    }
+    // public toString(): string {
+    //     var str: string[] = []
+    //     this.DFT((node, depth) => {
+    //         str.push('#'.repeat(depth) + node.value.name + ': ' + node.value.value + '\n')
+    //     })
+    //     return str.reverse().join('')
+    // }
 
     public toTree(): string {
         var str: string[] = []
         this.DFT((node, depth) => {
-            str.push('#'.repeat(depth) + node.value.name + ': ' + node.value.value + '\n')
+            str.push('#'.repeat(depth) + node.value.name + ': ' + node.value.value + ': ' + node.value.op + '\n')
         })
         return asciitree.generate(str.reverse().join(''))
     }
@@ -649,9 +661,9 @@ var toAST = (input: string) => {
     return ast
 }
 
-var asciiAST = (ast: AST) => {
-    return asciitree.generate(ast.toString())
-}
+// var asciiAST = (ast: AST) => {
+//     return asciitree.generate(ast.toString())
+// }
 
 // window.onload = () => {
 
@@ -674,17 +686,17 @@ var asciiAST = (ast: AST) => {
 //     var evalAST = (ast: AST, key: string) => {
 //         var solved = ast.solve(key)
 //         // var result = solved.interpret()
-//         return (asciiAST(solved) + '\n' + '')
+//         return (solved.toTree() + '\n' + '')
 //     }
 
 //     testButton.click(() => {
 //         var ast = toAST(testInput.val())
-//         testOutput.html(asciiAST(ast))
+//         testOutput.html(ast.toTree())
 //     })
 
 //     testInput.on('change', () => {
 //         var ast = toAST(testInput.val())
-//         testOutput.html(asciiAST(ast))
+//         testOutput.html(ast.toTree())
 //     })
 
 //     solveButton.click(() => {
@@ -712,4 +724,4 @@ var asciiAST = (ast: AST) => {
 
 // }
 
-export { AST, toAST, asciiAST, Token }
+export { AST, toAST, Token }
