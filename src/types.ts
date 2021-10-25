@@ -31,6 +31,7 @@ export interface SVT {
 }
 
 export interface StateValues<Type> {
+    fluid: FluidType
     P?: Type
     T?: Type
     V?: Type
@@ -94,6 +95,7 @@ export type CycleType =
     | 'rankine'
 
 export var stateTags = [
+    'fluid',
     'P',
     'T',
     'v',

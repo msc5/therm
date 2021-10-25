@@ -121,17 +121,19 @@ class Diagram {
 
             if (n[0] == 's') {
                 // Ideal Relation
-                var name = 'ideal_' + n
-                this.valueGraph.addNode(name, {
-                    'values': toAST(stateRelations['ideal'](n)),
-                    'type': 'equation'
-                })
-                this.valueGraph.addEdge('R', name)
-                this.valueGraph.addEdge('P_' + n, name)
-                this.valueGraph.addEdge('v_' + n, name)
-                this.valueGraph.addEdge('T_' + n, name)
-                name = 'vol_' + n
+                if (a.values.values.get('fluid') == 'gas') {
+                    var name = 'ideal_' + n
+                    this.valueGraph.addNode(name, {
+                        'values': toAST(stateRelations['ideal'](n)),
+                        'type': 'equation'
+                    })
+                    this.valueGraph.addEdge('R', name)
+                    this.valueGraph.addEdge('P_' + n, name)
+                    this.valueGraph.addEdge('v_' + n, name)
+                    this.valueGraph.addEdge('T_' + n, name)
+                }
                 // Volume relation
+                name = 'vol_' + n
                 this.valueGraph.addNode(name, {
                     'values': toAST(stateRelations['vol'](n)),
                     'type': 'equation'
@@ -203,53 +205,14 @@ class Diagram {
         // console.log(printNodes(this.valueGraph))
         // console.log(printEdges(this.valueGraph))
 
-        // console.log('---')
-        // console.log('COMPUTING P_s1')
-        // console.log('ANSWER: ', this.compute('P_s1'))
-
-        // console.log('---')
-        // console.log('COMPUTING T_s1')
-        // console.log('ANSWER: ', this.compute('T_s1'))
-
-        // console.log('---')
-        // console.log('COMPUTING v_s1')
-        // console.log('ANSWER: ', this.compute('v_s1'))
-
-        // console.log('---')
-        // console.log('COMPUTING P_s2')
-        // console.log('ANSWER: ', this.compute('P_s2'))
-
-        // console.log('---')
-        // console.log('COMPUTING T_s2')
-        // console.log('ANSWER: ', this.compute('T_s2'))
-
-        // console.log('---')
-        // console.log('COMPUTING v_s2')
-        // console.log('ANSWER: ', this.compute('v_s2'))
-
-        // console.log('---')
-        // console.log('COMPUTING P_s3')
-        // console.log('ANSWER: ', this.compute('P_s3'))
-
-        // console.log('---')
-        // console.log('COMPUTING T_s3')
-        // console.log('ANSWER: ', this.compute('T_s3'))
-
-        // console.log('---')
-        // console.log('COMPUTING v_s3')
-        // console.log('ANSWER: ', this.compute('v_s3'))
-
-        // console.log('---')
-        // console.log('COMPUTING P_s4')
-        // console.log('ANSWER: ', this.compute('P_s4'))
-
-        // console.log('---')
-        // console.log('COMPUTING T_s4')
-        // console.log('ANSWER: ', this.compute('T_s4'))
-
-        // console.log('---')
-        // console.log('COMPUTING v_s4')
-        // console.log('ANSWER: ', this.compute('v_s4'))
+        this.states.forEach((v, i) => {
+            var keys = ['P', 'T', 'v', 'h', 's']
+            console.log('---')
+            keys.forEach(k => {
+                var key = k + '_s' + (i + 1)
+                console.log(key, this.compute(key))
+            })
+        })
 
     }
 
@@ -310,16 +273,17 @@ class Diagram {
 var testCompGraph = new Graph()
 
 var testStates = [
-    new State({ 'P': 100e3, 'T': 298.15 }),
-    new State(),
-    new State({ 'T': 1523.15 }),
-    new State({ 'P': 100e3 }),
-    new State({ 'T': 473.15 }),
-    new State(),
-    new State({ 'P': 12.5e6, 'T': 773.15 }),
-    new State({ 'P': 10e3 }),
-    new State({ 'P': 10e3 })
+    new State({ 'fluid': 'gas', 'P': 100e3, 'T': 298.15 }),
+    new State({ 'fluid': 'gas' }),
+    new State({ 'fluid': 'gas', 'T': 1523.15 }),
+    new State({ 'fluid': 'gas', 'P': 100e3 }),
+    new State({ 'fluid': 'gas', 'T': 473.15 }),
+    new State({ 'fluid': 'vapor' }),
+    new State({ 'fluid': 'vapor', 'P': 12.5e6, 'T': 773.15 }),
+    new State({ 'fluid': 'vapor', 'P': 10e3 }),
+    new State({ 'fluid': 'vapor', 'P': 10e3 })
 ]
+
 
 var testPaths = [
     new Path({ 'fluid': 'gas', 'type': 'isentropic turbine', 'pratio': 14, 'eta': 0.85 }),
