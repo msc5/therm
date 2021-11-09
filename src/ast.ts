@@ -3,6 +3,7 @@ import $ from 'jquery'
 import Graph from 'graphology'
 import asciitree from 'ascii-tree'
 
+
 import 'bootstrap'
 import './style.css'
 
@@ -670,17 +671,33 @@ window.onload = () => {
     var testBox = $(document.createElement('div'))
     testBox.addClass('testBox')
 
+    var solveBox = $(document.createElement('div'))
+    solveBox.addClass('solveBox')
+
+    var testInputBox = $(document.createElement('div'))
+    testInputBox.addClass('input-group mb-3')
+
+    var solveInputBox = $(document.createElement('div'))
+    solveInputBox.addClass('input-group mb-3')
+
     var testInput = $(document.createElement('input'))
+    testInput.addClass("form-control")
     testInput.val(testString)
 
     var testOutput = $(document.createElement('span'))
 
     var testButton = $(document.createElement('button'))
+    testButton.html('Parse')
+    testButton.addClass("btn btn-outline-primary")
 
     var solveInput = $(document.createElement('input'))
+    solveInput.addClass("form-control")
     // solveInput.val('c')
 
     var solveButton = $(document.createElement('button'))
+    solveButton.addClass("btn btn-outline-primary")
+    solveButton.html('Solve')
+
     var solveOutput = $(document.createElement('span'))
 
     var evalAST = (ast: AST, key: string) => {
@@ -709,18 +726,20 @@ window.onload = () => {
         solveOutput.html(evalAST(ast, solveInput.val()))
     })
 
-
-    testBox.append(testInput)
-    testBox.append(testButton)
+    testInputBox.append(testInput)
+    testInputBox.append(testButton)
+    testBox.append(testInputBox)
     testBox.append(testOutput)
 
-    testBox.append(solveInput)
-    testBox.append(solveButton)
-    testBox.append(solveOutput)
+    solveInputBox.append(solveInput)
+    solveInputBox.append(solveButton)
+    solveBox.append(solveInputBox)
+    solveBox.append(solveOutput)
 
     testOutput.html(toAST(testInput.val()))
 
     document.body.appendChild(testBox[0])
+    document.body.appendChild(solveBox[0])
 
 }
 

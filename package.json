@@ -13,6 +13,7 @@
         "ascii-tree": "^0.3.0",
         "bootstrap": "^5.1.3",
         "css-loader": "^6.4.0",
+        "exports-loader": "^3.1.0",
         "graphology": "^0.21.1",
         "graphology-types": "^0.20.1",
         "html-webpack-plugin": "^5.4.0",

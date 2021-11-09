@@ -18,6 +18,8 @@ The parser implemented in this program uses a precedence-climbing algorithm to r
 
 An extremely rudimentary solving algorithm is implemented in this program for manipulating the AST in order to compute unknown values in the graph representation of each cycle. The AST is thus able to 'solve' for variables in its equations, as shown below:
 
+<!-- ![alt text](https://github.com/msc5/therm/blob//image.jpg?raw=true) -->
+
 ### Graph Represenation of Cycles
 
 Each cycle is input as a collection of nodes and edges each representing states and processes in the cycle, with information describing the working fluid and known values. Using this input, the program creates a more complex "Value Graph", which compiles all the known and unknown values into a much larger graph representation which includes all of the specified relations and their corresponding ASTs.
