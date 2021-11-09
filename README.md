@@ -4,6 +4,10 @@ The goal of this program is to take as input some high-level representation (par
 
 Some note that this program is nothing but a solver of systems of equations, and to some degree this is true, but its real advantage in that regard is being able to solve thermodynamic cycles quickly and deterministically, that is, without iteration. Moreover, this program is designed to be simple and as abstract as possible, allowing for applications to very general cycles, such as combined cycles with multiple working fluids, as well as unique combinations of reheats or open feedwater heating, or complex backworking turbines for example. 
 
+Here is an early example of the program's capabilities, although the output cycle is not complete because alternative working fluids are yet to be implemented fully.
+
+![alt text](img/Cycle1.png)
+
 ## Implementation
 
 ### Lexical Analyzer
@@ -30,8 +34,12 @@ To solve the cycle, the program recursively iterates from each unknown value in 
 
 ## To-do
 
-Although the program is mostly implemented, there are still many key features which are missing, and many more which would make the program more robust and user-friendly.
+Although the program is mostly implemented, there are still many key features which are missing, and many more which would make the program more robust and user-friendly. Items are ordered by urgency.
 
+- Breadth
+    - Support is needed for different working fluids (such as water vapor), path value computation, and more diversity in assumptions.
+- GUI
+    - Currently, all functionality of the program is in typescript, a graphical interface would greatly improve usability of the program.
 - AST Solver robustness
     - Currently, the equation solver is unable to handle inputs with multiple reoccurences of the same variable, as well as some specific mathematical operations, such as logarithms, integration, and differentiation.
 - Optimization
