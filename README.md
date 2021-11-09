@@ -8,7 +8,7 @@ Some note that this program is nothing but a solver of systems of equations, and
 
 ### Lexical Analyzer
 
-This program utilizes a lexical analyzer in order to organize string input for the parser, and thereby allow for user-defined state relations. (E.g., if a thermodynamic process is not implemented already, it is possible for the user to input their own.) Many of the basic processes are already implemented, i.e., "isentropic", "adiabatic", etc.
+This program utilizes a lexical analyzer in order to organize string input for the parser, and thereby allow for user-defined state relations. (E.g., if a thermodynamic process is not implemented already, it is possible for the user to input their own.) Many of the basic processes are already implemented, i.e., "isentropic", "adiabatic", etc. The lexical analyzer in this program is very simple and is implemented with a DFA, as is the usual method.
 
 ### Parser
 
@@ -16,9 +16,11 @@ The parser implemented in this program uses a precedence-climbing algorithm to r
 
 ### Abstract Syntax Trees (ASTs)
 
-An extremely rudimentary solving algorithm is implemented in this program for manipulating the AST in order to compute unknown values in the graph representation of each cycle. The AST is thus able to 'solve' for variables in its equations, as shown below:
+An extremely rudimentary solving algorithm is implemented in this program for manipulating the AST in order to compute unknown values in the graph representation of each cycle. The AST is thus able to 'solve' for variables in its equations, as shown below.
 
-<!-- ![alt text](https://github.com/msc5/therm/blob//image.jpg?raw=true) -->
+Here, the basic isentropic relation T2 / T1 = (P2 / P1) ^ ((gamma - 1) / gamma) is parsed and subsequently solved in terms of P2. Note, only the half of the AST opposite the target variable is returned, this is what allows for numerical computation in graph traversal. 
+
+![alt text](img/Solver1.png)
 
 ### Graph Represenation of Cycles
 
@@ -32,3 +34,5 @@ Although the program is mostly implemented, there are still many key features wh
 
 - AST Solver robustness
     - Currently, the equation solver is unable to handle inputs with multiple reoccurences of the same variable, as well as some specific mathematical operations, such as logarithms, integration, and differentiation.
+- Optimization
+    - A unique result of the Value Graph is that it may be possible to perform a scalar backpropogation in order to determine the partial derivatives of specified values in a cycle with respect to others. This would be useful for determining how a modifying a certain value in a cycle affects another, and could allow for the iterative optimization of the specified value via some form of gradient descent. 
