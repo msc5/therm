@@ -113,6 +113,15 @@ class Diagram {
         this.valueGraph.addNode('R', { 'values': 0.287, 'type': 'value' })
         this.valueGraph.addNode('GAMMA', { 'values': 1.4, 'type': 'value' })
 
+        this.states.forEach((v, i) => {
+            var keys = ['P', 'T', 'v', 'h', 's']
+            console.log('---')
+            keys.forEach(k => {
+                var key = k + '_s' + (i + 1)
+                console.log(key, v.values.get(k))
+            })
+        })
+
         this.componentGraph.forEachNode((n, a) => {
 
             a.values.values.forEach((v: number, k: string) => {
@@ -202,9 +211,6 @@ class Diagram {
 
         })
 
-        // console.log(printNodes(this.valueGraph))
-        // console.log(printEdges(this.valueGraph))
-
         this.states.forEach((v, i) => {
             var keys = ['P', 'T', 'v', 'h', 's']
             console.log('---')
@@ -214,8 +220,6 @@ class Diagram {
             })
         })
 
-        // console.log(this.valueGraph.degree('P_s6'))
-        this.valueGraph.forEachNeighbor('P_s6', n => console.log(n))
 
     }
 
