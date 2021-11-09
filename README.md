@@ -16,7 +16,9 @@ The parser implemented in this program uses a precedence-climbing algorithm to r
 
 ### Abstract Syntax Trees (ASTs)
 
-An extremely rudimentary solving algorithm is implemented in this program for manipulating the AST in order to compute unknown values in the graph representation of each cycle. The AST is thus able to 'solve' for variables in its equations, as shown below:
+An extremely rudimentary solving algorithm is implemented in this program for manipulating the AST in order to compute unknown values in the graph representation of each cycle. The AST is thus able to 'solve' for variables in its equations, as shown below.
+
+Here, the basic isentropic relation T2 / T1 = (P2 / P1) ^ ((gamma - 1) / gamma) is parsed and subsequently solved in terms of P2. Note, only the half of the AST opposite the target variable is returned, this is what allows for numerical computation in graph traversal. 
 
 ![alt text](img/Solver1.png)
 
