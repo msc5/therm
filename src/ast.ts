@@ -598,7 +598,7 @@ class AST {
     public toTree(): string {
         var str: string[] = []
         this.DFT((node, depth) => {
-            str.push('#'.repeat(depth) + node.value.name + ': ' + node.value.value + ': ' + node.value.op + '\n')
+            str.push('#'.repeat(depth) + node.value.name + '\n')
         })
         return asciitree.generate(str.reverse().join(''))
     }
@@ -665,63 +665,63 @@ var toAST = (input: string) => {
 //     return asciitree.generate(ast.toString())
 // }
 
-// window.onload = () => {
+window.onload = () => {
 
-//     var testBox = $(document.createElement('div'))
-//     testBox.addClass('testBox')
+    var testBox = $(document.createElement('div'))
+    testBox.addClass('testBox')
 
-//     var testInput = $(document.createElement('input'))
-//     testInput.val(testString)
+    var testInput = $(document.createElement('input'))
+    testInput.val(testString)
 
-//     var testOutput = $(document.createElement('span'))
+    var testOutput = $(document.createElement('span'))
 
-//     var testButton = $(document.createElement('button'))
+    var testButton = $(document.createElement('button'))
 
-//     var solveInput = $(document.createElement('input'))
-//     // solveInput.val('c')
+    var solveInput = $(document.createElement('input'))
+    // solveInput.val('c')
 
-//     var solveButton = $(document.createElement('button'))
-//     var solveOutput = $(document.createElement('span'))
+    var solveButton = $(document.createElement('button'))
+    var solveOutput = $(document.createElement('span'))
 
-//     var evalAST = (ast: AST, key: string) => {
-//         var solved = ast.solve(key)
-//         // var result = solved.interpret()
-//         return (solved.toTree() + '\n' + '')
-//     }
+    var evalAST = (ast: AST, key: string) => {
+        var solved = ast.solve(key)
+        // var result = solved.interpret()
+        return (solved.toTree() + '\n' + '')
+    }
 
-//     testButton.click(() => {
-//         var ast = toAST(testInput.val())
-//         testOutput.html(ast.toTree())
-//     })
+    testButton.click(() => {
+        var ast = toAST(testInput.val())
+        testOutput.html(ast.toTree())
+    })
 
-//     testInput.on('change', () => {
-//         var ast = toAST(testInput.val())
-//         testOutput.html(ast.toTree())
-//     })
+    testInput.on('change', () => {
+        var ast = toAST(testInput.val())
+        testOutput.html(ast.toTree())
+    })
 
-//     solveButton.click(() => {
-//         var ast = toAST(testInput.val())
-//         solveOutput.html(evalAST(ast, solveInput.val()))
-//     })
+    solveButton.click(() => {
+        var ast = toAST(testInput.val())
+        solveOutput.html(evalAST(ast, solveInput.val()))
+    })
 
-//     solveInput.on('change', () => {
-//         var ast = toAST(testInput.val())
-//         solveOutput.html(evalAST(ast, solveInput.val()))
-//     })
+    solveInput.on('change', () => {
+        var ast = toAST(testInput.val())
+        solveOutput.html(evalAST(ast, solveInput.val()))
+    })
 
 
-//     testBox.append(testInput)
-//     testBox.append(testButton)
-//     testBox.append(testOutput)
+    testBox.append(testInput)
+    testBox.append(testButton)
+    testBox.append(testOutput)
 
-//     testBox.append(solveInput)
-//     testBox.append(solveButton)
-//     testBox.append(solveOutput)
+    testBox.append(solveInput)
+    testBox.append(solveButton)
+    testBox.append(solveOutput)
 
-//     testOutput.html(toAST(testInput.val()))
+    testOutput.html(toAST(testInput.val()))
 
-//     document.body.appendChild(testBox[0])
+    document.body.appendChild(testBox[0])
 
-// }
+}
 
 export { AST, toAST, Token }

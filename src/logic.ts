@@ -168,7 +168,7 @@ class Diagram {
                     this.valueGraph.addEdge('P_' + v[1], name)
 
                     if (a.values.values.get('type') == 'isentropic turbine') {
-                        name = 'isentropic_' + n
+                        name = 'isentropic_turbine_' + n
                         this.valueGraph.addNode(name, {
                             'values': toAST(pathRelations['isentropic turbine'](v[0], v[1], n)),
                             'type': 'equation'
@@ -183,7 +183,7 @@ class Diagram {
                     }
 
                     if (a.values.values.get('type') == 'isentropic compressor') {
-                        name = 'isentropic_' + n
+                        name = 'isentropic_compressor_' + n
                         this.valueGraph.addNode(name, {
                             'values': toAST(pathRelations['isentropic compressor'](v[0], v[1], n)),
                             'type': 'equation'
@@ -213,6 +213,9 @@ class Diagram {
                 console.log(key, this.compute(key))
             })
         })
+
+        // console.log(this.valueGraph.degree('P_s6'))
+        this.valueGraph.forEachNeighbor('P_s6', n => console.log(n))
 
     }
 
